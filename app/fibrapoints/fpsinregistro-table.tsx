@@ -12,11 +12,11 @@ import {
   Tooltip,
   addToast,
 } from "@heroui/react";
-import { fetchData } from "@/services/apiService";
+import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
+import { SlArrowRightCircle } from "react-icons/sl";
 
-// Ajustar las columnas para que coincidan con la nueva estructura de datos de la API
 export const columns = [
   { name: "ID Ticket", uid: "id_ticket" },
   { name: "ID Contrato", uid: "idContrato" },
@@ -28,16 +28,7 @@ export const columns = [
   { name: "ACTIONS", uid: "actions" },
 ];
 
-const statusColorMap: Record<
-  string,
-  | "success"
-  | "danger"
-  | "warning"
-  | "default"
-  | "primary"
-  | "secondary"
-  | undefined
-> = {
+const statusColorMap: Record<string, "success" | "danger"> = {
   solved: "success",
   pending: "danger",
 };
@@ -49,31 +40,20 @@ export default function FPSinRegistroTable() {
     const getData = async () => {
       try {
         const result = await fetchData("get-noregisteredfpoints");
-        // Verificamos el status de la respuesta
         if (result.status === "success") {
-          // Mapear los datos para agregar un estado de "ticket_solucionado"
           const modifiedData = result.data.map((item: any) => ({
             ...item,
             ticket_solucionado: item.ticket_solucionado ? "solved" : "pending",
           }));
-          // addToast({
-          //   title: "Ok",
-          //   description: result.message || "Datos cargados correctamente",
-          //   color: "success",
-          // });
           setData(modifiedData);
         } else {
-          throw new Error(
-            result.message || "Error en la respuesta del servidor"
-          );
+          throw new Error(result.message || "Error en la respuesta del servidor");
         }
       } catch (error) {
         addToast({
           title: "Error",
           description:
-            error instanceof Error
-              ? error.message
-              : "Error al cargar los datos",
+            error instanceof Error ? error.message : "Error al cargar los datos",
           color: "danger",
         });
         console.error("Error fetching data:", error);
@@ -83,10 +63,43 @@ export default function FPSinRegistroTable() {
     getData();
   }, []);
 
-  const renderCell = React.useCallback(
-    (item: any, columnKey: string | number) => {
-      const cellValue = item[columnKey];
+  const handleProcessItem = async (
+    idTicket: string,
+    idCausalSubcategoria: string,
+    idContrato: string,
+    idUsuario: string
+  ) => {
+    try {
+      const result = await postData("insert-fibrapoints", {
+        idcausal_subcategoria: idCausalSubcategoria,
+        idContrato: idContrato,
+        idTicket: idTicket,
+        idUsuario: idUsuario,
+      });
 
+      // Solo se elimina el registro si la operación fue exitosa
+      setData((prevData) =>
+        prevData.filter((item) => String(item.id_ticket) !== String(idTicket))
+      );
+
+      addToast({
+        title: "Éxito",
+        description: result.message || "Ítem procesado correctamente",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error al procesar el ítem",
+        color: "danger",
+      });
+    }
+  };
+
+  const renderCell = React.useCallback(
+    (item: any, columnKey: string) => {
+      const cellValue = item[columnKey];
       switch (columnKey) {
         case "id_ticket":
           return (
@@ -152,6 +165,21 @@ export default function FPSinRegistroTable() {
                   <DeleteIcon />
                 </span>
               </Tooltip>
+              <Tooltip color="success" content="Registrar ítem">
+                <span
+                  className="text-lg text-success cursor-pointer active:opacity-50"
+                  onClick={() =>
+                    handleProcessItem(
+                      item.id_ticket,
+                      item.idcausal_subcategoria,
+                      item.idContrato,
+                      item.usuario
+                    )
+                  }
+                >
+                  <SlArrowRightCircle />
+                </span>
+              </Tooltip>
             </div>
           );
         default:
@@ -175,7 +203,6 @@ export default function FPSinRegistroTable() {
           )}
         </TableHeader>
         <TableBody>
-          {/* Simulamos 5 filas de carga */}
           {[...Array(5)].map((_, rowIndex) => (
             <TableRow key={rowIndex}>
               {columns.map((column) => (
@@ -216,7 +243,7 @@ export default function FPSinRegistroTable() {
         {(item) => (
           <TableRow key={item.id_ticket}>
             {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
+              <TableCell>{renderCell(item, String(columnKey))}</TableCell>
             )}
           </TableRow>
         )}

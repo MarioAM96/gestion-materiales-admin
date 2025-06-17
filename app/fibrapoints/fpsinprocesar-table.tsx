@@ -19,6 +19,11 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
 } from "@heroui/react";
 import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
@@ -81,9 +86,12 @@ export default function FPRegistradosTable() {
     direction: "ascending",
   });
   const [page, setPage] = useState<number>(1);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [modalData, setModalData] = useState<any>(null);
+  const [isModalLoading, setIsModalLoading] = useState<boolean>(false);
   const rowsPerPage = 10;
 
-  // Configuración de Pusher para escuchar eventos en tiempo real
+  // Configuración de Pusher para escuchar eventos en tiempo real (para agregar nuevos elementos)
   useEffect(() => {
     const pusher = new Pusher("1d159ac153a09a146938", {
       cluster: "us2",
@@ -91,21 +99,19 @@ export default function FPRegistradosTable() {
 
     const channel = pusher.subscribe("my-channel");
     channel.bind("my-event", (eventData: any) => {
-      //console.log("Evento recibido:", eventData);
-      // Actualizar los datos de la tabla
-      setData(
-        (prevData) =>
-          prevData
-            .map((item) =>
-              item.idTicket === eventData.idTicket
-                ? { ...item, status: eventData.status }
-                : item
-            )
-            .filter((item) => item.status === "PENDIENTE") // Opcional: Filtrar los procesados
-      );
+      console.log("Evento recibido:", eventData);
+      setData((prevData) => {
+        // Evitar duplicados verificando si el idTicket ya existe
+        if (!prevData.some((item) => item.idTicket === eventData.idTicket)) {
+          // Si se agrega un nuevo elemento, volver a la primera página para asegurarse de que sea visible si no coincide con el filtro de búsqueda actual
+          setPage(1);
+          return [...prevData, eventData];
+        }
+        return prevData;
+      });
       addToast({
-        title: "Actualización",
-        description: `Estado del ticket ${eventData.idTicket} actualizado a ${eventData.status}`,
+        title: "Nuevo Elemento",
+        description: `Nuevo ticket ${eventData.idTicket} agregado con estado ${eventData.estado_ticket}`,
         color: "success",
       });
     });
@@ -122,11 +128,6 @@ export default function FPRegistradosTable() {
         setIsLoading(true);
         const result = await fetchData("get-regfpoints");
         if (result.status === "success") {
-          // addToast({
-          //   title: "Ok",
-          //   description: result.message || "Datos cargados correctamente",
-          //   color: "success",
-          // });
           setData(result.data);
         } else {
           throw new Error(
@@ -151,6 +152,31 @@ export default function FPRegistradosTable() {
     getData();
   }, []);
 
+  const handleViewDetails = async (idCausal: number) => {
+    try {
+      setIsModalLoading(true);
+      setIsModalOpen(true);
+      const result = await fetchData(`causalfp/${idCausal}`);
+      if (result.status === "success") {
+        setModalData(result.data);
+      } else {
+        throw new Error(result.message || "Error al cargar los detalles");
+      }
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Error al cargar los detalles",
+        color: "danger",
+      });
+      console.error("Error fetching details:", error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  };
+
   const handleProcessItem = async (idTicket: string) => {
     try {
       const result = await postData("reproceso_fibrapoints", {
@@ -163,10 +189,10 @@ export default function FPRegistradosTable() {
         color: "success",
       });
 
-      // Opcional: Actualizar la tabla después del procesamiento, por ejemplo, eliminando la fila o actualizando el estado.
-      // setData((prevData) =>
-      //   prevData.filter((item) => item.idTicket !== idTicket)
-      // );
+      // Actualizar localmente los datos de la tabla después del procesamiento
+      setData((prevData) =>
+        prevData.filter((item) => item.idTicket !== idTicket)
+      );
     } catch (error) {
       addToast({
         title: "Error",
@@ -174,7 +200,7 @@ export default function FPRegistradosTable() {
           error instanceof Error ? error.message : "Error al procesar el ítem",
         color: "danger",
       });
-      //console.error("Error procesando el ítem:", error);
+      console.error("Error procesando el ítem:", error);
     }
   };
 
@@ -258,11 +284,7 @@ export default function FPRegistradosTable() {
               <Tooltip content="Ver detalles">
                 <span
                   className="text-lg text-default-400 cursor-pointer active:opacity-50"
-                  onClick={() =>
-                    console.log(
-                      `Ver detalles de ID Causal Subcategoría: ${cellValue}`
-                    )
-                  }
+                  onClick={() => handleViewDetails(cellValue)}
                 >
                   <EyeIcon />
                 </span>
@@ -371,73 +393,162 @@ export default function FPRegistradosTable() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Search and Filter Controls */}
-      <div className="flex justify-between gap-3 items-center">
-        <Input
-          placeholder="Buscar..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          startContent={<SearchIcon className="w-4 h-4" />}
-          className="max-w-xs"
-        />
-        <Dropdown>
-          <DropdownTrigger>
-            <Button variant="bordered">{selectedStatus || "Estado"}</Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="Filtro de estado"
-            onAction={(key) => setSelectedStatus(key as string)}
-          >
-            <>
-              <DropdownItem key="">Todos</DropdownItem>
-              {statusOptions.map((option) => (
-                <DropdownItem key={option.uid}>{option.name}</DropdownItem>
-              ))}
-            </>
-          </DropdownMenu>
-        </Dropdown>
-      </div>
-
-      {/* Table */}
-      <Table aria-label="Tabla de puntos registrados">
-        <TableHeader columns={columns}>
-          {(column) => (
-            <TableColumn
-              key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
-              onClick={() => column.sortable && handleSortChange(column.uid)}
-              className={column.sortable ? "cursor-pointer" : ""}
+    <>
+      <div className="flex flex-col gap-4">
+        {/* Search and Filter Controls */}
+        <div className="flex justify-between gap-3 items-center">
+          <Input
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            startContent={<SearchIcon className="w-4 h-4" />}
+            className="max-w-xs"
+          />
+          <Dropdown>
+            <DropdownTrigger>
+              <Button variant="bordered">{selectedStatus || "Estado"}</Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Filtro de estado"
+              onAction={(key) => setSelectedStatus(key as string)}
             >
-              {column.name}
-              {sortDescriptor.column === column.uid && (
-                <span>
-                  {sortDescriptor.direction === "ascending" ? " ↑" : " ↓"}
-                </span>
-              )}
-            </TableColumn>
-          )}
-        </TableHeader>
-        <TableBody items={paginatedData} emptyContent="No se encontraron datos">
-          {(item) => (
-            <TableRow key={item.id}>
-              {(columnKey) => (
-                <TableCell>{renderCell(item, columnKey)}</TableCell>
-              )}
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+              <>
+                <DropdownItem key="">Todos</DropdownItem>
+                {statusOptions.map((option) => (
+                  <DropdownItem key={option.uid}>{option.name}</DropdownItem>
+                ))}
+              </>
+            </DropdownMenu>
+          </Dropdown>
+        </div>
 
-      {/* Pagination */}
-      <div className="flex justify-center">
-        <Pagination
-          total={totalPages}
-          page={page}
-          onChange={setPage}
-          showControls
-        />
+        {/* Table */}
+        <Table aria-label="Tabla de puntos registrados">
+          <TableHeader columns={columns}>
+            {(column) => (
+              <TableColumn
+                key={column.uid}
+                align={column.uid === "actions" ? "center" : "start"}
+                onClick={() => column.sortable && handleSortChange(column.uid)}
+                className={column.sortable ? "cursor-pointer" : ""}
+              >
+                {column.name}
+                {sortDescriptor.column === column.uid && (
+                  <span>
+                    {sortDescriptor.direction === "ascending" ? " ↑" : " ↓"}
+                  </span>
+                )}
+              </TableColumn>
+            )}
+          </TableHeader>
+          <TableBody
+            items={paginatedData}
+            emptyContent="No se encontraron datos"
+          >
+            {(item) => (
+              <TableRow key={item.id}>
+                {(columnKey) => (
+                  <TableCell>{renderCell(item, columnKey)}</TableCell>
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        <div className="flex justify-center">
+          <Pagination
+            total={totalPages}
+            page={page}
+            onChange={setPage}
+            showControls
+          />
+        </div>
       </div>
-    </div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        aria-label="Detalles de Causal Subcategoría"
+      >
+        <ModalContent>
+          {isModalLoading ? (
+            <ModalBody>
+              <Skeleton className="h-6 w-full rounded-md" />
+              <Skeleton className="h-6 w-full rounded-md" />
+              <Skeleton className="h-6 w-full rounded-md" />
+            </ModalBody>
+          ) : modalData ? (
+            <>
+              <ModalHeader>
+                <h2>Detalles de Causal Subcategoría</h2>
+              </ModalHeader>
+              <ModalBody>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>ID Causal Subcategoría:</strong>{" "}
+                      {modalData.idcausal_subcategoria}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>Nombre Causal:</strong> {modalData.nombre_causal}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>ID Subcategoría Incidencia:</strong>{" "}
+                      {modalData.idsubcategoria_incidencia}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>Estado Causal:</strong>{" "}
+                      {modalData.estado_causal === "1" ? "Activo" : "Inactivo"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>Fecha Registro:</strong>{" "}
+                      {modalData.fecha_registro_causal || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-default-400">
+                      <strong>Puntos:</strong> {modalData.puntos || "N/A"}
+                    </p>
+                  </div>
+                  {modalData.image_url && (
+                    <div className="flex flex-col items-center">
+                      <p className="text-sm text-default-400 mb-2">
+                        <strong>Imagen:</strong>
+                      </p>
+                      <img
+                        src={modalData.image_url}
+                        alt="Imagen de Causal"
+                        className="max-w-full h-32 object-contain rounded-md"
+                      />
+                    </div>
+                  )}
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  color="default"
+                  variant="bordered"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cerrar
+                </Button>
+              </ModalFooter>
+            </>
+          ) : (
+            <ModalBody>
+              <p>No se encontraron datos para mostrar.</p>
+            </ModalBody>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 }
