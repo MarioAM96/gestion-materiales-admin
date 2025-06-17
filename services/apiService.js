@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://45.173.228.31:81/api';
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 export const fetchData = async (endpoint) => {
   try {
@@ -15,18 +15,19 @@ export const fetchData = async (endpoint) => {
 export const postData = async (endpoint, data) => {
   try {
     const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error: ${response.statusText}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Post error:', error);
+    throw error;
   }
 };
 

@@ -17,13 +17,14 @@ export const siteConfig = {
       href: "/projects",
     },
     {
+      label: "FP",
+      href: "/fibrapoints",
+    },
+    {
       label: "Docs",
       href: "/docs",
     },
-    {
-      label: "Pricing",
-      href: "/pricing",
-    },
+
     {
       label: "Blog",
       href: "/blog",
@@ -43,12 +44,12 @@ export const siteConfig = {
       href: "/dashboard",
     },
     {
-      label: "Projects",
+      label: "Proyectos",
       href: "/projects",
     },
     {
-      label: "Team",
-      href: "/team",
+      label: "FibraPpoints",
+      href: "/fibrapoints",
     },
     {
       label: "Calendar",
