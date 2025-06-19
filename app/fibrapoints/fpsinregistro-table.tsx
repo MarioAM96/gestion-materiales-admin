@@ -35,10 +35,12 @@ const statusColorMap: Record<string, "success" | "danger"> = {
 
 export default function FPSinRegistroTable() {
   const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Estado para controlar la carga
 
   useEffect(() => {
     const getData = async () => {
       try {
+        setIsLoading(true); // Iniciar el estado de carga
         const result = await fetchData("get-noregisteredfpoints");
         if (result.status === "success") {
           const modifiedData = result.data.map((item: any) => ({
@@ -57,6 +59,8 @@ export default function FPSinRegistroTable() {
           color: "danger",
         });
         console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false); // Finalizar el estado de carga, haya éxito o error
       }
     };
 
@@ -189,7 +193,8 @@ export default function FPSinRegistroTable() {
     []
   );
 
-  if (data.length === 0) {
+  // Estado de carga: Mostrar skeletons mientras se cargan los datos
+  if (isLoading) {
     return (
       <Table aria-label="Tabla de puntos no registrados - Cargando">
         <TableHeader columns={columns}>
@@ -227,6 +232,26 @@ export default function FPSinRegistroTable() {
     );
   }
 
+  // Estado sin datos: Mostrar mensaje de "Sin registros" cuando no hay datos
+  if (!isLoading && data.length === 0) {
+    return (
+      <Table aria-label="Tabla de puntos no registrados - Sin datos">
+        <TableHeader columns={columns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody emptyContent="No se encontraron registros.">{[]}</TableBody>
+      </Table>
+    );
+  }
+
+  // Estado con datos: Mostrar la tabla con los datos obtenidos
   return (
     <Table aria-label="Tabla de puntos no registrados">
       <TableHeader columns={columns}>

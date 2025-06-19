@@ -36,21 +36,25 @@ export default function App() {
         subtitle="Ver cuentas"
         title="Compartir Documento"
       >
-        <p className="text-justify">
-  El documento debe estar compartido con estas dos cuentas de correo con permisos de edición:
-</p>
+        <p className="text-justify leading-relaxed">
+          El documento debe ser compartido con la cuenta de servicio y
+          permisos de <span className="font-semibold">Editor</span>:
+        </p>
 
         <SnippetAccount />
       </AccordionItem>
 
       {/* <AccordionItem
         key="2"
-        aria-label="Apps Permissions"
+        aria-label="Claves de Servicio"
         startContent={<ShieldSecurityIcon />}
-        subtitle="3 apps have read permissions"
-        title="Apps Permissions"
+        subtitle="Descargar claves"
+        title="Claves de Servicio"
       >
-        {defaultContent}
+        <p className="text-justify">
+          Claves de acceso
+        </p>
+        <KeysTable/>
       </AccordionItem> */}
       {/* <AccordionItem
         key="3"

@@ -1,7 +1,6 @@
 import ProjectsTable from "./projects-table";
 import ModalForm from "./modal";
-import SnippetAccount from "./snippet";
-import MonitorMobileIcon from "./accordion"; // Adjust the path as needed
+import MonitorMobileIcon from "./accordion";
 
 export default function ProjectsPage() {
   return (
@@ -16,12 +15,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      <br></br>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <ProjectsTable />
-      </div>
+      <ProjectsTable />
     </div>
   );
 }
