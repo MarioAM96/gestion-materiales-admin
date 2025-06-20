@@ -19,33 +19,14 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
 } from "@heroui/react";
 import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
-
-// Column definitions for the table
-export const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "ID Contrato", uid: "idContrato", sortable: true },
-  { name: "ID Ticket", uid: "idTicket", sortable: true },
-  {
-    name: "ID Causal Subcategoría",
-    uid: "idcausal_subcategoria",
-    sortable: true,
-  },
-  { name: "Fecha Informe", uid: "fecha_informe", sortable: true },
-  { name: "Puntos Después Canje", uid: "puntos_despues_canje", sortable: true },
-  { name: "Estado Ticket", uid: "estado_ticket", sortable: false },
-  { name: "ACTIONS", uid: "actions", sortable: false },
-];
+import { columns } from "./colums";
+import CausalSubcategoryModal from "./modalcausal";
 
 const statusColorMap: Record<
   string,
@@ -465,90 +446,12 @@ export default function FPRegistradosTable() {
           />
         </div>
       </div>
-      <Modal
+      <CausalSubcategoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        aria-label="Detalles de Causal Subcategoría"
-      >
-        <ModalContent>
-          {isModalLoading ? (
-            <ModalBody>
-              <Skeleton className="h-6 w-full rounded-md" />
-              <Skeleton className="h-6 w-full rounded-md" />
-              <Skeleton className="h-6 w-full rounded-md" />
-            </ModalBody>
-          ) : modalData ? (
-            <>
-              <ModalHeader>
-                <h2>Detalles de Causal Subcategoría</h2>
-              </ModalHeader>
-              <ModalBody>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>ID Causal Subcategoría:</strong>{" "}
-                      {modalData.idcausal_subcategoria}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>Nombre Causal:</strong> {modalData.nombre_causal}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>ID Subcategoría Incidencia:</strong>{" "}
-                      {modalData.idsubcategoria_incidencia}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>Estado Causal:</strong>{" "}
-                      {modalData.estado_causal === "1" ? "Activo" : "Inactivo"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>Fecha Registro:</strong>{" "}
-                      {modalData.fecha_registro_causal || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-default-400">
-                      <strong>Puntos:</strong> {modalData.puntos || "N/A"}
-                    </p>
-                  </div>
-                  {modalData.image_url && (
-                    <div className="flex flex-col items-center">
-                      <p className="text-sm text-default-400 mb-2">
-                        <strong>Imagen:</strong>
-                      </p>
-                      <img
-                        src={modalData.image_url}
-                        alt="Imagen de Causal"
-                        className="max-w-full h-32 object-contain rounded-md"
-                      />
-                    </div>
-                  )}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  color="default"
-                  variant="bordered"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  Cerrar
-                </Button>
-              </ModalFooter>
-            </>
-          ) : (
-            <ModalBody>
-              <p>No se encontraron datos para mostrar.</p>
-            </ModalBody>
-          )}
-        </ModalContent>
-      </Modal>
+        isLoading={isModalLoading}
+        data={modalData}
+      />
     </>
   );
 }

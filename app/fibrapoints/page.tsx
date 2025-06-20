@@ -1,4 +1,4 @@
-import FPSinProcesarTable from "./fpsinprocesar-table";
+import FPSinProcesarTable from "./SinProcesarTable/fpsinprocesar-table";
 import FPSinRegistroTable from "./fpsinregistro-table";
 
 export default function FibraPointsPage() {
