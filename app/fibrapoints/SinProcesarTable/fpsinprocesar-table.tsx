@@ -19,11 +19,6 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
 } from "@heroui/react";
 import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
@@ -32,7 +27,7 @@ import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
 import { columns } from "./colums";
 import CausalSubcategoryModal from "./modalcausal";
-import TicketDetailsModal from "../Modals/TicketDetailsModal"; // Importa el nuevo modal
+import { DetailsDropdown } from "../Actions/Dropdown";
 
 const statusColorMap: Record<
   string,
@@ -75,9 +70,6 @@ export default function FPRegistradosTable() {
   const [page, setPage] = useState<number>(1);
   const [isCausalModalOpen, setIsCausalModalOpen] = useState<boolean>(false);
   const [causalModalData, setCausalModalData] = useState<any>(null);
-  const [isCausalModalLoading, setIsCausalModalLoading] = useState<boolean>(false);
-  const [isTicketModalOpen, setIsTicketModalOpen] = useState<boolean>(false);
-  const [ticketModalData, setTicketModalData] = useState<any>(null);
   const rowsPerPage = 10;
 
   // Configuración de Pusher para escuchar eventos en tiempo real (para agregar nuevos elementos)
@@ -140,36 +132,6 @@ export default function FPRegistradosTable() {
 
     getData();
   }, []);
-
-  const handleViewDetails = async (idCausal: number) => {
-    try {
-      setIsCausalModalLoading(true);
-      setIsCausalModalOpen(true);
-      const result = await fetchData(`causalfp/${idCausal}`);
-      if (result.status === "success") {
-        setCausalModalData(result.data);
-      } else {
-        throw new Error(result.message || "Error al cargar los detalles");
-      }
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Error al cargar los detalles",
-        color: "danger",
-      });
-      console.error("Error fetching details:", error);
-    } finally {
-      setIsCausalModalLoading(false);
-    }
-  };
-
-  const handleViewTicketDetails = (item: any) => {
-    setTicketModalData(item); // Usamos los datos directamente del item
-    setIsTicketModalOpen(true);
-  };
 
   const handleProcessItem = async (idTicket: string) => {
     try {
@@ -274,16 +236,19 @@ export default function FPRegistradosTable() {
         case "idcausal_subcategoria":
           return (
             <div className="flex items-center gap-2">
-              <p className="text-sm text-default-400">{cellValue}</p>
-              <Tooltip content="Ver detalles">
-                <span
-                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
-                  onClick={() => handleViewDetails(cellValue)}
-                >
-                  <EyeIcon />
-                </span>
-              </Tooltip>
-            </div>
+            <p className="text-sm text-default-400">{cellValue}</p>
+            <Tooltip content="Ver detalles">
+              <span
+                className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                onClick={() => {
+                  setCausalModalData({ idCausal: cellValue }); // Pasamos solo el ID
+                  setIsCausalModalOpen(true);
+                }}
+              >
+                <EyeIcon />
+              </span>
+            </Tooltip>
+          </div>
           );
         case "fecha_informe":
           return (
@@ -315,12 +280,9 @@ export default function FPRegistradosTable() {
         case "actions":
           return (
             <div className="relative flex items-center gap-2">
-              <Tooltip content="Detalles Ticket">
-                <span
-                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
-                  onClick={() => handleViewTicketDetails(item)}
-                >
-                  <EyeIcon />
+              <Tooltip content="Detalles">
+                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                  <DetailsDropdown item={item} />
                 </span>
               </Tooltip>
               <Tooltip content="Edit item">
@@ -463,17 +425,10 @@ export default function FPRegistradosTable() {
         </div>
       </div>
       <CausalSubcategoryModal
-        isOpen={isCausalModalOpen}
-        onClose={() => setIsCausalModalOpen(false)}
-        isLoading={isCausalModalLoading}
-        data={causalModalData}
-      />
-      <TicketDetailsModal
-        isOpen={isTicketModalOpen}
-        onClose={() => setIsTicketModalOpen(false)}
-        isLoading={false} 
-        data={ticketModalData}
-      />
+      isOpen={isCausalModalOpen}
+      onClose={() => setIsCausalModalOpen(false)}
+      data={causalModalData}
+    />
     </>
   );
 }

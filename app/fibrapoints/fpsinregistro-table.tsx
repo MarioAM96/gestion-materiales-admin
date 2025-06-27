@@ -16,6 +16,8 @@ import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SlArrowRightCircle } from "react-icons/sl";
+import { DetailsDropdown } from "./Actions/Dropdown";
+import CausalSubcategoryModal from "./SinProcesarTable/modalcausal";
 
 export const columns = [
   { name: "ID Ticket", uid: "id_ticket" },
@@ -35,7 +37,9 @@ const statusColorMap: Record<string, "success" | "danger"> = {
 
 export default function FPSinRegistroTable() {
   const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Estado para controlar la carga
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCausalModalOpen, setIsCausalModalOpen] = useState<boolean>(false);
+  const [causalModalData, setCausalModalData] = useState<any>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -49,13 +53,17 @@ export default function FPSinRegistroTable() {
           }));
           setData(modifiedData);
         } else {
-          throw new Error(result.message || "Error en la respuesta del servidor");
+          throw new Error(
+            result.message || "Error en la respuesta del servidor"
+          );
         }
       } catch (error) {
         addToast({
           title: "Error",
           description:
-            error instanceof Error ? error.message : "Error al cargar los datos",
+            error instanceof Error
+              ? error.message
+              : "Error al cargar los datos",
           color: "danger",
         });
         console.error("Error fetching data:", error);
@@ -101,97 +109,105 @@ export default function FPSinRegistroTable() {
     }
   };
 
-  const renderCell = React.useCallback(
-    (item: any, columnKey: string) => {
-      const cellValue = item[columnKey];
-      switch (columnKey) {
-        case "id_ticket":
-          return (
-            <div className="flex flex-col">
-              <p className="text-bold text-sm capitalize">{cellValue}</p>
-            </div>
-          );
-        case "idContrato":
-          return (
-            <div className="flex flex-col">
-              <p className="text-sm text-default-400">{cellValue}</p>
-            </div>
-          );
-        case "fecha_insidencia":
-        case "fecha_informe":
-          return (
-            <div className="flex flex-col">
-              <p className="text-sm text-default-400">{cellValue}</p>
-            </div>
-          );
-        case "idcausal_subcategoria":
-          return (
-            <div className="flex flex-col">
-              <p className="text-sm text-default-400">{cellValue}</p>
-            </div>
-          );
-        case "ticket_solucionado":
-          return (
-            <Chip
-              className="capitalize"
-              color={
-                statusColorMap[
-                  item.ticket_solucionado as keyof typeof statusColorMap
-                ]
-              }
-              size="sm"
-              variant="flat"
-            >
-              {cellValue === "solved" ? "Solucionado" : "Pendiente"}
-            </Chip>
-          );
-        case "usuario":
-          return (
-            <div className="flex flex-col">
-              <p className="text-sm text-default-400">{cellValue}</p>
-            </div>
-          );
-        case "actions":
-          return (
-            <div className="relative flex items-center gap-2">
-              <Tooltip content="Details">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EyeIcon />
-                </span>
-              </Tooltip>
-              <Tooltip content="Edit item">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EditIcon />
-                </span>
-              </Tooltip>
-              <Tooltip color="danger" content="Delete item">
-                <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                  <DeleteIcon />
-                </span>
-              </Tooltip>
-              <Tooltip color="success" content="Registrar ítem">
-                <span
-                  className="text-lg text-success cursor-pointer active:opacity-50"
-                  onClick={() =>
-                    handleProcessItem(
-                      item.id_ticket,
-                      item.idcausal_subcategoria,
-                      item.idContrato,
-                      item.usuario
-                    )
-                  }
-                >
-                  <SlArrowRightCircle />
-                </span>
-              </Tooltip>
-            </div>
-          );
-        default:
-          return cellValue;
-      }
-    },
-    []
-  );
+  const renderCell = React.useCallback((item: any, columnKey: string) => {
+    const cellValue = item[columnKey];
+    switch (columnKey) {
+      case "id_ticket":
+        return (
+          <div className="flex flex-col">
+            <p className="text-bold text-sm capitalize">{cellValue}</p>
+          </div>
+        );
+      case "idContrato":
+        return (
+          <div className="flex flex-col">
+            <p className="text-sm text-default-400">{cellValue}</p>
+          </div>
+        );
+      case "fecha_insidencia":
+      case "fecha_informe":
+        return (
+          <div className="flex flex-col">
+            <p className="text-sm text-default-400">{cellValue}</p>
+          </div>
+        );
+      case "idcausal_subcategoria":
+        return (
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-default-400">{cellValue}</p>
+            <Tooltip content="Ver detalles">
+              <span
+                className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                onClick={() => {
+                  setCausalModalData({ idCausal: cellValue }); // Pasamos solo el ID
+                  setIsCausalModalOpen(true);
+                }}
+              >
+                <EyeIcon />
+              </span>
+            </Tooltip>
+          </div>
+        );
+      case "ticket_solucionado":
+        return (
+          <Chip
+            className="capitalize"
+            color={
+              statusColorMap[
+                item.ticket_solucionado as keyof typeof statusColorMap
+              ]
+            }
+            size="sm"
+            variant="flat"
+          >
+            {cellValue === "solved" ? "Solucionado" : "Pendiente"}
+          </Chip>
+        );
+      case "usuario":
+        return (
+          <div className="flex flex-col">
+            <p className="text-sm text-default-400">{cellValue}</p>
+          </div>
+        );
+      case "actions":
+        return (
+          <div className="relative flex items-center gap-2">
+            <Tooltip content="Details">
+              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                <DetailsDropdown item={item} />
+              </span>
+            </Tooltip>
+            <Tooltip content="Edit item">
+              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                <EditIcon />
+              </span>
+            </Tooltip>
+            <Tooltip color="danger" content="Delete item">
+              <span className="text-lg text-danger cursor-pointer active:opacity-50">
+                <DeleteIcon />
+              </span>
+            </Tooltip>
+            <Tooltip color="success" content="Registrar ítem">
+              <span
+                className="text-lg text-success cursor-pointer active:opacity-50"
+                onClick={() =>
+                  handleProcessItem(
+                    item.id_ticket,
+                    item.idcausal_subcategoria,
+                    item.idContrato,
+                    item.usuario
+                  )
+                }
+              >
+                <SlArrowRightCircle />
+              </span>
+            </Tooltip>
+          </div>
+        );
+      default:
+        return cellValue;
+    }
+  }, []);
 
   // Estado de carga: Mostrar skeletons mientras se cargan los datos
   if (isLoading) {
@@ -253,26 +269,33 @@ export default function FPSinRegistroTable() {
 
   // Estado con datos: Mostrar la tabla con los datos obtenidos
   return (
-    <Table aria-label="Tabla de puntos no registrados">
-      <TableHeader columns={columns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody items={data}>
-        {(item) => (
-          <TableRow key={item.id_ticket}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, String(columnKey))}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <>
+      <Table aria-label="Tabla de puntos no registrados">
+        <TableHeader columns={columns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody items={data}>
+          {(item) => (
+            <TableRow key={item.id_ticket}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, String(columnKey))}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <CausalSubcategoryModal
+        isOpen={isCausalModalOpen}
+        onClose={() => setIsCausalModalOpen(false)}
+        data={causalModalData}
+      />
+    </>
   );
 }

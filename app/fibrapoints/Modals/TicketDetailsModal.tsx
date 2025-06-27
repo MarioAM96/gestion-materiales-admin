@@ -33,7 +33,7 @@ export default function TicketDetailsModal({
     >
       <ModalContent>
         <ModalHeader>
-          {isLoading || !data ? "Cargando..." : `Detalles del Ticket ${data.idTicket}`}
+          {isLoading || !data ? "Cargando..." : `Detalles del Ticket ${data.idTicket || data.id_ticket}`}
         </ModalHeader>
         <ModalBody>
           <div className="space-y-4">
@@ -41,7 +41,7 @@ export default function TicketDetailsModal({
               // Display a loading skeleton or placeholder while data is loading or null
               <Skeleton className="h-64 w-full rounded-lg" />
             ) : (
-              <TicketCard idTicket={data.idTicket} />
+              <TicketCard idTicket={data.idTicket ? data.idTicket : data.id_ticket} />
             )}
             {/* Puedes agregar más campos según los datos disponibles */}
           </div>

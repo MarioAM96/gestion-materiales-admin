@@ -1,6 +1,7 @@
 "use client";
 
 import FPSinProcesarTable from "./SinProcesarTable/fpsinprocesar-table";
+import FibraPointstable from "./Tables/fibrapointstable";
 import FPSinRegistroTable from "./fpsinregistro-table";
 import { Tabs, Tab, Card, CardBody } from "@heroui/react";
 
@@ -23,10 +24,10 @@ export default function FibraPointsPage() {
             </CardBody>
           </Card>
         </Tab>
-        <Tab key="videos" title="Videos">
+        <Tab key="videos" title="Registros">
           <Card>
             <CardBody>
-              {/* <TicketCard idTicket={ticket.id_ticket}/> */}
+              <FibraPointstable/>
             </CardBody>
           </Card>
         </Tab>

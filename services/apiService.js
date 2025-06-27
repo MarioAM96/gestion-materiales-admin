@@ -6,11 +6,15 @@ export const fetchData = async (endpoint) => {
   try {
     const response = await fetch(`${API_BASE_URL}/${endpoint}`);
     if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
+      // Lanza un error con el código de estado para que el caller lo maneje
+      const error = new Error(`Error: ${response.statusText}`);
+      error.status = response.status; // Adjuntamos el código de estado al error
+      throw error;
     }
     return await response.json();
   } catch (error) {
-    console.error('Fetch error:', error);
+    // Propagamos el error al caller en lugar de solo hacer console.error
+    throw error;
   }
 };
 

@@ -1,6 +1,7 @@
 import { Card, CardBody, CardHeader, Button } from "@heroui/react";
 import { useState, useEffect } from "react";
 import { Calendar, User, AlertTriangle, CheckCircle, MapPin, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { fetchData } from "@/services/apiService";
 
 interface TicketData {
   id_ticket: number;
@@ -42,11 +43,7 @@ export default function TicketCard({ idTicket }: { idTicket: number }) {
     const fetchTicketData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://127.0.0.1:8000/api/inforegistronegativo/${idTicket}`);
-        if (!response.ok) {
-          throw new Error("Error al obtener los datos del ticket");
-        }
-        const result = await response.json();
+        const result = await fetchData(`inforegistronegativo/${idTicket}`);
         if (result.status === "success" && result.data.length > 0) {
           setTicketData(result.data[0]);
         } else {
