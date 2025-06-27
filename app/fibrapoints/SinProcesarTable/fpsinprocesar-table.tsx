@@ -19,6 +19,11 @@ import {
   DropdownMenu,
   DropdownItem,
   Pagination,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@heroui/react";
 import { fetchData, postData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
@@ -27,6 +32,7 @@ import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
 import { columns } from "./colums";
 import CausalSubcategoryModal from "./modalcausal";
+import TicketDetailsModal from "../Modals/TicketDetailsModal"; // Importa el nuevo modal
 
 const statusColorMap: Record<
   string,
@@ -67,9 +73,11 @@ export default function FPRegistradosTable() {
     direction: "ascending",
   });
   const [page, setPage] = useState<number>(1);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [modalData, setModalData] = useState<any>(null);
-  const [isModalLoading, setIsModalLoading] = useState<boolean>(false);
+  const [isCausalModalOpen, setIsCausalModalOpen] = useState<boolean>(false);
+  const [causalModalData, setCausalModalData] = useState<any>(null);
+  const [isCausalModalLoading, setIsCausalModalLoading] = useState<boolean>(false);
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState<boolean>(false);
+  const [ticketModalData, setTicketModalData] = useState<any>(null);
   const rowsPerPage = 10;
 
   // Configuración de Pusher para escuchar eventos en tiempo real (para agregar nuevos elementos)
@@ -135,11 +143,11 @@ export default function FPRegistradosTable() {
 
   const handleViewDetails = async (idCausal: number) => {
     try {
-      setIsModalLoading(true);
-      setIsModalOpen(true);
+      setIsCausalModalLoading(true);
+      setIsCausalModalOpen(true);
       const result = await fetchData(`causalfp/${idCausal}`);
       if (result.status === "success") {
-        setModalData(result.data);
+        setCausalModalData(result.data);
       } else {
         throw new Error(result.message || "Error al cargar los detalles");
       }
@@ -154,8 +162,13 @@ export default function FPRegistradosTable() {
       });
       console.error("Error fetching details:", error);
     } finally {
-      setIsModalLoading(false);
+      setIsCausalModalLoading(false);
     }
+  };
+
+  const handleViewTicketDetails = (item: any) => {
+    setTicketModalData(item); // Usamos los datos directamente del item
+    setIsTicketModalOpen(true);
   };
 
   const handleProcessItem = async (idTicket: string) => {
@@ -302,8 +315,11 @@ export default function FPRegistradosTable() {
         case "actions":
           return (
             <div className="relative flex items-center gap-2">
-              <Tooltip content="Details">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+              <Tooltip content="Detalles Ticket">
+                <span
+                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                  onClick={() => handleViewTicketDetails(item)}
+                >
                   <EyeIcon />
                 </span>
               </Tooltip>
@@ -447,10 +463,16 @@ export default function FPRegistradosTable() {
         </div>
       </div>
       <CausalSubcategoryModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        isLoading={isModalLoading}
-        data={modalData}
+        isOpen={isCausalModalOpen}
+        onClose={() => setIsCausalModalOpen(false)}
+        isLoading={isCausalModalLoading}
+        data={causalModalData}
+      />
+      <TicketDetailsModal
+        isOpen={isTicketModalOpen}
+        onClose={() => setIsTicketModalOpen(false)}
+        isLoading={false} 
+        data={ticketModalData}
       />
     </>
   );

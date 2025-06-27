@@ -19,20 +19,7 @@ export const siteConfig = {
     {
       label: "FP",
       href: "/fibrapoints",
-    },
-    {
-      label: "Docs",
-      href: "/docs",
-    },
-
-    {
-      label: "Blog",
-      href: "/blog",
-    },
-    {
-      label: "About",
-      href: "/about",
-    },
+    }
   ],
   navMenuItems: [
     {

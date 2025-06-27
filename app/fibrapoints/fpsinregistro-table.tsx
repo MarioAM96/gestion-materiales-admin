@@ -74,7 +74,7 @@ export default function FPSinRegistroTable() {
     idUsuario: string
   ) => {
     try {
-      const result = await postData("insert-fibrapoints", {
+      const result = await postData("insert-fibrapoints-event", {
         idcausal_subcategoria: idCausalSubcategoria,
         idContrato: idContrato,
         idTicket: idTicket,

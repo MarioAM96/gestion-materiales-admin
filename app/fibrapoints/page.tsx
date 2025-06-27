@@ -1,17 +1,36 @@
+"use client";
+
 import FPSinProcesarTable from "./SinProcesarTable/fpsinprocesar-table";
 import FPSinRegistroTable from "./fpsinregistro-table";
+import { Tabs, Tab, Card, CardBody } from "@heroui/react";
 
 export default function FibraPointsPage() {
+
   return (
-    <div className="flex flex-col justify-between gap-6 w-full p-0">
-      <div className="w-full">
-        <h2 className="text-left text-lg font-semibold mb-2">Sin Procesar</h2>
-        <FPSinProcesarTable />
-      </div>
-      <div className="w-full">
-        <h2 className="text-left text-lg font-semibold mb-2">Sin registro</h2>
-        <FPSinRegistroTable />
-      </div>
+    <div className="flex w-full flex-col">
+      <Tabs aria-label="Options">
+        <Tab key="photos" title="Sin Procesar">
+          <Card>
+            <CardBody>
+              <FPSinProcesarTable />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="music" title="Sin Registro">
+          <Card>
+            <CardBody>
+              <FPSinRegistroTable />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="videos" title="Videos">
+          <Card>
+            <CardBody>
+              {/* <TicketCard idTicket={ticket.id_ticket}/> */}
+            </CardBody>
+          </Card>
+        </Tab>
+      </Tabs>
     </div>
   );
 }
