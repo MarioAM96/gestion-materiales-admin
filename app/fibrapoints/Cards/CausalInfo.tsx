@@ -20,6 +20,7 @@ export default function CausalSubcategoryCard({
       try {
         setIsLoading(true);
         const result = await fetchData(`causalfp/${idCausal}`);
+        console.log("consuta");
         if (isMounted) {
           if (result.status === "success") {
             setData(result.data);

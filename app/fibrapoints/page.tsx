@@ -10,21 +10,21 @@ export default function FibraPointsPage() {
   return (
     <div className="flex w-full flex-col">
       <Tabs aria-label="Options">
-        <Tab key="photos" title="Sin Procesar">
+        <Tab key="SinProcesar" title="Sin Procesar">
           <Card>
             <CardBody>
               <FPSinProcesarTable />
             </CardBody>
           </Card>
         </Tab>
-        <Tab key="music" title="Sin Registro">
+        <Tab key="SinRegistro" title="Sin Registro">
           <Card>
             <CardBody>
               <FPSinRegistroTable />
             </CardBody>
           </Card>
         </Tab>
-        <Tab key="videos" title="Registros">
+        <Tab key="Registros" title="Registros">
           <Card>
             <CardBody>
               <FibraPointstable/>

@@ -18,6 +18,7 @@ import { Skeleton } from "@heroui/react";
 import { SlArrowRightCircle } from "react-icons/sl";
 import { DetailsDropdown } from "./Actions/Dropdown";
 import CausalSubcategoryModal from "./SinProcesarTable/modalcausal";
+import { TiWarningOutline } from "react-icons/ti";
 
 export const columns = [
   { name: "ID Ticket", uid: "id_ticket" },
@@ -92,6 +93,37 @@ export default function FPSinRegistroTable() {
       // Solo se elimina el registro si la operación fue exitosa
       setData((prevData) =>
         prevData.filter((item) => String(item.id_ticket) !== String(idTicket))
+      );
+
+      addToast({
+        title: "Éxito",
+        description: result.message || "Ítem procesado correctamente",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error al procesar el ítem",
+        color: "danger",
+      });
+    }
+  };
+
+  const handleProcessNegItem = async (item: any) => {
+    try {
+      console.log(item);
+      const result = await postData("registronegativo-fp", {
+        idcausal_subcategoria: item.idcausal_subcategoria,
+        idContrato: item.idContrato,
+        idTicket: item.id_ticket,
+        idUsuario: item.usuario,
+        created_at: item.fecha_insidencia,
+      });
+
+      // Solo se elimina el registro si la operación fue exitosa
+      setData((prevData) =>
+        prevData.filter((item) => String(item.id_ticket) !== String(item.id_ticket))
       );
 
       addToast({
@@ -187,6 +219,14 @@ export default function FPSinRegistroTable() {
                 <DeleteIcon />
               </span>
             </Tooltip>
+            <Tooltip color="danger" content="Procesar Negativos">
+              <span
+                className="text-lg text-danger cursor-pointer active:opacity-50"
+                onClick={() => handleProcessNegItem(item)}
+              >
+                <TiWarningOutline />
+              </span>
+            </Tooltip>
             <Tooltip color="success" content="Registrar ítem">
               <span
                 className="text-lg text-success cursor-pointer active:opacity-50"
@@ -230,6 +270,8 @@ export default function FPSinRegistroTable() {
                 <TableCell key={column.uid}>
                   {column.uid === "actions" ? (
                     <div className="relative flex items-center gap-2">
+                      <Skeleton className="h-5 w-5 rounded-full" />
+                      <Skeleton className="h-5 w-5 rounded-full" />
                       <Skeleton className="h-5 w-5 rounded-full" />
                       <Skeleton className="h-5 w-5 rounded-full" />
                       <Skeleton className="h-5 w-5 rounded-full" />
