@@ -40,7 +40,7 @@ const CausalSubcategoryModal: React.FC<CausalSubcategoryModalProps> = ({
             )}
           </ModalBody>
           <ModalFooter>
-            <Button color="primary" variant="flat" onClick={onClose}>
+            <Button color="danger" variant="flat" onClick={onClose}>
               Cerrar
             </Button>
           </ModalFooter>

@@ -70,8 +70,8 @@ export default function TicketCard({ idTicket }: { idTicket: number }) {
 
   if (loading) {
     return (
-      <Card className="shadow-md">
-        <CardBody className="py-4">
+      <Card className="shadow-sm rounded-lg border border-gray-100 dark:border-gray-800 max-w-4xl mx-auto">
+        <CardBody className="py-6 px-6">
           <span className="text-base text-gray-600 dark:text-gray-300 animate-pulse">Cargando datos del ticket...</span>
         </CardBody>
       </Card>
@@ -80,8 +80,8 @@ export default function TicketCard({ idTicket }: { idTicket: number }) {
 
   if (error || !ticketData) {
     return (
-      <Card className="shadow-md">
-        <CardBody className="py-4">
+      <Card className="shadow-sm rounded-lg border border-gray-100 dark:border-gray-800 max-w-4xl mx-auto">
+        <CardBody className="py-6 px-6">
           <span className="text-base text-red-600 dark:text-red-400">⚠ {error || "No se pudo cargar la información del ticket"}</span>
         </CardBody>
       </Card>
@@ -91,66 +91,84 @@ export default function TicketCard({ idTicket }: { idTicket: number }) {
   const getPriorityTextColor = () => {
     switch (ticketData.prioridad.toLowerCase()) {
       case "alta":
-        return "text-red-700 dark:text-red-400 font-semibold";
+        return "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/10 px-2 py-1 rounded-full";
       case "media":
-        return "text-yellow-700 dark:text-yellow-300 font-semibold";
+        return "text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/10 px-2 py-1 rounded-full";
       default:
-        return "text-green-700 dark:text-green-400 font-semibold";
+        return "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/10 px-2 py-1 rounded-full";
     }
   };
 
   const getVisitStatusTextColor = () => {
     return ticketData.estado_visita === "Exitoso"
-      ? "text-green-700 dark:text-green-400 font-semibold"
-      : "text-orange-700 dark:text-orange-400 font-semibold";
+      ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/10 px-2 py-1 rounded-full"
+      : "text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 px-2 py-1 rounded-full";
   };
 
+  // Componente reutilizable para los encabezados de las secciones colapsables
+  const SectionHeader = ({ title, section }: { title: string; section: string }) => (
+    <button
+      className="flex justify-between items-center w-full text-left focus:outline-none focus:ring-1 focus:ring-blue-200 dark:focus:ring-blue-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
+      onClick={() => toggleSection(section)}
+      aria-expanded={expandedSections[section]}
+      aria-controls={`${section}-section`}
+    >
+      <span className="text-base font-medium text-gray-900 dark:text-gray-100">{title}</span>
+      {expandedSections[section] ? (
+        <ChevronUp size={20} className="text-gray-600 dark:text-gray-300 transition-transform duration-200" />
+      ) : (
+        <ChevronDown size={20} className="text-gray-600 dark:text-gray-300 transition-transform duration-200" />
+      )}
+    </button>
+  );
+
   return (
-    <Card className="shadow-md rounded-lg overflow-hidden max-w-4xl mx-auto">
-      <CardHeader className="border-b border-gray-100 dark:border-gray-700 px-6 py-3">
+    <Card className="shadow-sm rounded-xl border border-gray-100 dark:border-gray-800 max-w-4xl mx-auto">
+      <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex justify-between items-center">
-          <span className="text-xl font-bold text-blue-800 dark:text-blue-400">Ticket ID:   {ticketData.id_ticket}</span>
-          <span className={`text-sm font-medium px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700 ${getPriorityTextColor()}`}>
-            Prioridad: {ticketData.prioridad}
+          <span className="text-xl font-semibold text-black-800 dark:text-blue-300 tracking-tight">
+            Ticket ID: {ticketData.id_ticket}
+          </span>
+          <span className={`text-sm font-medium border-none ${getPriorityTextColor()}`}>
+            {ticketData.prioridad}
           </span>
         </div>
       </CardHeader>
-      <CardBody className="p-6 space-y-5">
-        {/* Información Principal */}
-        <div className="transition-all duration-300">
-          <button
-            className="flex justify-between items-center w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => toggleSection("details")}
-            aria-expanded={expandedSections.details}
-            aria-controls="details-section"
-          >
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Detalles Principales</span>
-            {expandedSections.details ? <ChevronUp size={22} className="text-gray-600 dark:text-gray-400" /> : <ChevronDown size={22} className="text-gray-600 dark:text-gray-400" />}
-          </button>
+
+      <CardBody className="p-6 space-y-4">
+        {/* Detalles Principales */}
+        <div className="transition-all duration-300 ease-in-out">
+          <SectionHeader title="Detalles Principales" section="details" />
           {expandedSections.details && (
-            <div id="details-section" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <Calendar size={18} className="text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Fecha Incidencia:</strong> <span className="text-indigo-700 dark:text-indigo-400">{ticketData.fecha_insidencia}</span>
+            <div
+              id="details-section"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 px-2 animate-fade-in"
+              style={{ animation: "fadeIn 0.3s ease-in forwards" }}
+            >
+              <div className="flex items-center gap-2.5 min-h-[24px]">
+                <Calendar size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 overflow-visible">
+                  <strong className="text-gray-900 dark:text-gray-100">Fecha:</strong>{" "}
+                  <span className="text-indigo-700 dark:text-indigo-400">{ticketData.fecha_insidencia}</span>
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <User size={18} className="text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Contrato:</strong> {ticketData.idContrato}
+              <div className="flex items-center gap-2.5 min-h-[24px]">
+                <User size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 overflow-visible">
+                  <strong className="text-gray-900 dark:text-gray-100">Contrato:</strong> {ticketData.idContrato}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <AlertTriangle size={18} className="text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Prioridad:</strong> <span className={getPriorityTextColor()}>{ticketData.prioridad}</span>
+              <div className="flex items-center gap-2.5 min-h-[24px]">
+                <AlertTriangle size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 overflow-visible">
+                  <strong className="text-gray-900 dark:text-gray-100">Prioridad:</strong>{" "}
+                  <span className={getPriorityTextColor().split(" ")[0]}>{ticketData.prioridad}</span>
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <MapPin size={18} className="text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Zona:</strong> {ticketData.zona}
+              <div className="flex items-center gap-2.5 min-h-[24px]">
+                <MapPin size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-800 dark:text-gray-200 overflow-visible">
+                  <strong className="text-gray-900 dark:text-gray-100">Zona:</strong> {ticketData.zona}
                 </span>
               </div>
             </div>
@@ -158,115 +176,60 @@ export default function TicketCard({ idTicket }: { idTicket: number }) {
         </div>
 
         {/* Observaciones */}
-        <div className="transition-all duration-300">
-          <button
-            className="flex justify-between items-center w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => toggleSection("observations")}
-            aria-expanded={expandedSections.observations}
-            aria-controls="observations-section"
-          >
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Observaciones</span>
-            {expandedSections.observations ? <ChevronUp size={22} className="text-gray-600 dark:text-gray-400" /> : <ChevronDown size={22} className="text-gray-600 dark:text-gray-400" />}
-          </button>
+        <div className="transition-all duration-300 ease-in-out">
+          <SectionHeader title="Observaciones" section="observations" />
           {expandedSections.observations && (
-            <p id="observations-section" className="text-sm text-gray-700 dark:text-gray-300 mt-3 leading-relaxed max-h-40 overflow-y-auto animate-fade-in">
-              {ticketData.observaciones}
-            </p>
+            <div
+              id="observations-section"
+              className="text-sm text-gray-800 dark:text-gray-200 mt-3 px-2 leading-relaxed min-h-[50px] overflow-y-auto animate-fade-in"
+              style={{ animation: "fadeIn 0.3s ease-in forwards" }}
+            >
+              {ticketData.observaciones || <span className="text-gray-500 dark:text-gray-400 italic">Sin observaciones</span>}
+            </div>
           )}
         </div>
 
         {/* Solución */}
-        <div className="transition-all duration-300">
-          <button
-            className="flex justify-between items-center w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => toggleSection("solution")}
-            aria-expanded={expandedSections.solution}
-            aria-controls="solution-section"
-          >
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Solución</span>
-            {expandedSections.solution ? <ChevronUp size={22} className="text-gray-600 dark:text-gray-400" /> : <ChevronDown size={22} className="text-gray-600 dark:text-gray-400" />}
-          </button>
+        <div className="transition-all duration-300 ease-in-out">
+          <SectionHeader title="Solución" section="solution" />
           {expandedSections.solution && (
-            <p id="solution-section" className="text-sm text-gray-700 dark:text-gray-300 mt-3 leading-relaxed max-h-40 overflow-y-auto animate-fade-in">
-              {ticketData.solucion}
-            </p>
+            <div
+              id="solution-section"
+              className="text-sm text-gray-800 dark:text-gray-200 mt-3 px-2 leading-relaxed min-h-[50px] overflow-y-auto animate-fade-in"
+              style={{ animation: "fadeIn 0.3s ease-in forwards" }}
+            >
+              {ticketData.solucion || <span className="text-gray-500 dark:text-gray-400 italic">Sin solución registrada</span>}
+            </div>
           )}
         </div>
 
-        {/* Información Técnica */}
-        {/* <div className="transition-all duration-300">
-          <button
-            className="flex justify-between items-center w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-500 rounded p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-            onClick={() => toggleSection("technical")}
-            aria-expanded={expandedSections.technical}
-            aria-controls="technical-section"
-          >
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200">Información Técnica</span>
-            {expandedSections.technical ? <ChevronUp size={22} className="text-gray-600 dark:text-gray-400" /> : <ChevronDown size={22} className="text-gray-600 dark:text-gray-400" />}
-          </button>
-          {expandedSections.technical && (
-            <div id="technical-section" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>OLT:</strong> {ticketData.olt}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Estado Visita:</strong>{" "}
-                  <span className={getVisitStatusTextColor()}>{ticketData.estado_visita}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Login FTTH:</strong> {ticketData.login_ftth}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(ticketData.login_ftth)}
-                  title="Copiar al portapapeles"
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  <Copy size={16} />
-                </Button>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Clave FTTH:</strong> {ticketData.clave_ftth}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(ticketData.clave_ftth)}
-                  title="Copiar al portapapeles"
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  <Copy size={16} />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div> */}
-
         {/* Observaciones de Cierre */}
         {ticketData.observaciones_cierre && (
-          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-            <span className="text-lg font-semibold text-gray-800 dark:text-gray-200 block mb-2">Observaciones de Cierre</span>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-32 overflow-y-auto">
+          <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+            <span className="text-base font-medium text-gray-900 dark:text-gray-100 block mb-2">Observaciones de Cierre</span>
+            <div className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed min-h-[50px] overflow-y-auto px-2">
               {ticketData.observaciones_cierre}
-            </p>
+            </div>
           </div>
         )}
 
         {/* Pago al Técnico */}
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
-          <CheckCircle size={18} className="text-gray-500 dark:text-gray-400" />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            <strong>Pago Técnico:</strong> <span className="text-green-700 dark:text-green-400 font-medium">${ticketData.pago_tecnico}</span>
+        <div className="flex items-center gap-2.5 pt-3 border-t border-gray-100 dark:border-gray-700 min-h-[24px]">
+          <CheckCircle size={16} className="text-green-600 dark:text-green-400 flex-shrink-0" />
+          <span className="text-sm text-gray-800 dark:text-gray-200 overflow-visible">
+            <strong className="text-gray-900 dark:text-gray-100">Pago Técnico:</strong>{" "}
+            <span className="text-green-700 dark:text-green-400 font-medium">${ticketData.pago_tecnico}</span>
           </span>
         </div>
       </CardBody>
     </Card>
   );
 }
+
+const styles = `
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+`;

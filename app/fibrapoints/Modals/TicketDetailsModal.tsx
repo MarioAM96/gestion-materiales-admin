@@ -47,7 +47,7 @@ export default function TicketDetailsModal({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="danger" variant="light" onPress={onClose}>
+          <Button color="danger" variant="flat" onPress={onClose}>
             Cerrar
           </Button>
         </ModalFooter>
