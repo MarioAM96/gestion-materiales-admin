@@ -1,5 +1,12 @@
 import { fetchData } from "@/services/apiService";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/react";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@heroui/react";
 import { Input } from "@heroui/react";
 import { useState, useEffect } from "react";
 
@@ -15,7 +22,7 @@ export default function FibraPointstable() {
       setError(null);
       try {
         const result = await fetchData(`searchfpregister/${searchValue}`);
-        
+
         if (result.success) {
           setTableData(result.data);
         } else {
@@ -54,7 +61,7 @@ export default function FibraPointstable() {
         onChange={(e) => setSearchValue(e.target.value)}
         className="max-w-md"
       />
-      
+
       <Table aria-label="Tabla de puntos fibra">
         <TableHeader>
           <TableColumn>ID CONTRATO</TableColumn>
@@ -62,21 +69,29 @@ export default function FibraPointstable() {
           <TableColumn>PUNTOS ANTES</TableColumn>
           <TableColumn>PUNTOS CANJEADOS</TableColumn>
           <TableColumn>PUNTOS DESPUÉS</TableColumn>
+          <TableColumn>ID CAUSAL SUBCATEGORIA</TableColumn>
+          <TableColumn>FECHA DE CREACIÓN</TableColumn>
           <TableColumn>STATUS</TableColumn>
           <TableColumn>VALOR REAL</TableColumn>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center">Cargando...</TableCell>
+              <TableCell colSpan={9} className="text-center">
+                Cargando...
+              </TableCell>
             </TableRow>
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-red-500">{error}</TableCell>
+              <TableCell colSpan={9} className="text-center text-red-500">
+                {error}
+              </TableCell>
             </TableRow>
           ) : tableData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center">No se encontraron resultados</TableCell>
+              <TableCell colSpan={9} className="text-center">
+                No se encontraron resultados
+              </TableCell>
             </TableRow>
           ) : (
             tableData.map((row: any) => (
@@ -86,6 +101,8 @@ export default function FibraPointstable() {
                 <TableCell>{row.puntos_antes_canje}</TableCell>
                 <TableCell>{row.puntos_canjeados}</TableCell>
                 <TableCell>{row.puntos_despues_canje}</TableCell>
+                <TableCell>{row.idcausal_subcategoria}</TableCell>
+                <TableCell>{row.created_at}</TableCell>
                 <TableCell>{row.status}</TableCell>
                 <TableCell>{row.valor_real}</TableCell>
               </TableRow>

@@ -1,12 +1,12 @@
 "use client";
 
-import FPSinProcesarTable from "./SinProcesarTable/fpsinprocesar-table";
+import FPSinProcesarTable from "./Tables/fpsinprocesar-table";
+import AumentoVelocidadTable from "./Tables/aumentovelocidad-table";
 import FibraPointstable from "./Tables/fibrapointstable";
-import FPSinRegistroTable from "./fpsinregistro-table";
+import FPSinRegistroTable from "./Tables/fpsinregistro-table";
 import { Tabs, Tab, Card, CardBody } from "@heroui/react";
 
 export default function FibraPointsPage() {
-
   return (
     <div className="flex w-full flex-col">
       <Tabs aria-label="Options">
@@ -27,7 +27,14 @@ export default function FibraPointsPage() {
         <Tab key="Registros" title="Registros">
           <Card>
             <CardBody>
-              <FibraPointstable/>
+              <FibraPointstable />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="RegistrosAumentoVelocidad" title="Registros Aumento Velocidad">
+          <Card>
+            <CardBody>
+              <AumentoVelocidadTable />
             </CardBody>
           </Card>
         </Tab>

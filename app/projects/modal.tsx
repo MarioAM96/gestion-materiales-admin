@@ -50,7 +50,7 @@ export default function ModalForm() {
       setSelectedFileContent(response.content);
       addToast({
         title: "Archivo Cargado",
-        description: `Configuración de ${fileName} cargado correctamente.`,
+        description: `Configuración de ${fileName} cargada correctamente.`,
         color: "success",
       });
     } catch (error) {
