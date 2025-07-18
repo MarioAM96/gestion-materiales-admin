@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { SlArrowRightCircle } from "react-icons/sl";
+import { LuBadgeX } from "react-icons/lu";
 import {
   Table,
   TableHeader,
@@ -20,13 +21,14 @@ import {
   DropdownItem,
   Pagination,
 } from "@heroui/react";
-import { fetchData, postData } from "@/services/apiService";
+import { fetchData, postData, updateData } from "@/services/apiService";
 import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
 import CausalSubcategoryModal from "../Modals/modalcausal";
 import { DetailsDropdown } from "../Actions/Dropdown";
+import debounce from "lodash.debounce"; // Añadido para debouncing de búsqueda
 
 const statusColorMap: Record<
   string,
@@ -58,7 +60,7 @@ const columns = [
   { name: "Puntos Después Canje", uid: "puntos_despues_canje", sortable: true },
   { name: "Fecha Creación", uid: "created_at", sortable: true },
   { name: "Estado Ticket", uid: "estado_ticket", sortable: false },
-  { name: "ACTIONS", uid: "actions", sortable: false },
+  { name: "Acciones", uid: "actions", sortable: false },
 ];
 
 // Status filter options
@@ -74,6 +76,7 @@ export default function FPRegistradosTable() {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [sortDescriptor, setSortDescriptor] = useState<{
     column: string;
@@ -87,40 +90,52 @@ export default function FPRegistradosTable() {
   const [causalModalData, setCausalModalData] = useState<any>(null);
   const rowsPerPage = 10;
 
-  // Configuración de Pusher para escuchar eventos en tiempo real (para agregar nuevos elementos)
+  // Debounce search input to prevent excessive filtering
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setDebouncedSearchTerm(value);
+      }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    return () => debouncedSearch.cancel();
+  }, [searchTerm, debouncedSearch]);
+
+  // Configuración de Pusher para escuchar eventos en tiempo real
   useEffect(() => {
     const pusher = new Pusher("1d159ac153a09a146938", {
       cluster: "us2",
     });
-
     const channel = pusher.subscribe("my-channel");
     channel.bind("my-event", (eventData: any) => {
       console.log("Evento recibido:", eventData);
       setData((prevData) => {
-        // Evitar duplicados verificando si el idTicket ya existe
         if (!prevData.some((item) => item.idTicket === eventData.idTicket)) {
-          // Si se agrega un nuevo elemento, volver a la primera página para asegurarse de que sea visible si no coincide con el filtro de búsqueda actual
-          setPage(1);
+          setPage(1); // Volver a la primera página para nuevos elementos
+          addToast({
+            title: "Nuevo Elemento",
+            description: `Ticket ${eventData.idTicket} agregado (${eventData.estado_ticket})`,
+            color: "success",
+          });
           return [...prevData, eventData];
         }
         return prevData;
       });
-      addToast({
-        title: "Nuevo Elemento",
-        description: `Nuevo ticket ${eventData.idTicket} agregado con estado ${eventData.estado_ticket}`,
-        color: "success",
-      });
     });
-
     return () => {
       channel.unbind();
       pusher.unsubscribe("my-channel");
     };
   }, []);
 
+  // Fetch initial data
   useEffect(() => {
     const getData = async () => {
       try {
+        console.log("Loading started, isLoading:", true);
         setIsLoading(true);
         const result = await fetchData("get-regfpoints");
         if (result.status === "success") {
@@ -139,28 +154,26 @@ export default function FPRegistradosTable() {
               : "Error al cargar los datos",
           color: "danger",
         });
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       } finally {
+        console.log("Loading finished, isLoading:", false);
         setIsLoading(false);
       }
     };
-
     getData();
   }, []);
 
-  const handleProcessItem = async (idTicket: string) => {
+  // Process item handler with confirmation
+  const handleRechazarItem = useCallback(async (idTicket: string) => {
     try {
-      const result = await postData("reproceso_fibrapoints", {
-        id_ticket: idTicket,
+      const result = await updateData("update-status/" + idTicket, {
+        status: "RECHAZADO",
       });
-
       addToast({
         title: "Éxito",
-        description: result.message || "Ítem procesado correctamente",
+        description: result.message || "Ítem rechazado correctamente",
         color: "success",
       });
-
-      // Actualizar localmente los datos de la tabla después del procesamiento
       setData((prevData) =>
         prevData.filter((item) => item.idTicket !== idTicket)
       );
@@ -171,32 +184,55 @@ export default function FPRegistradosTable() {
           error instanceof Error ? error.message : "Error al procesar el ítem",
         color: "danger",
       });
-      console.error("Error procesando el ítem:", error);
+      //console.error("Error procesando el ítem:", error);
     }
-  };
+  }, []);
 
-  // Filtering data based on search term and selected status
+  const handleProcessItem = useCallback(async (idTicket: string) => {
+    try {
+      const result = await postData("reproceso_fibrapoints", {
+        id_ticket: idTicket,
+      });
+      addToast({
+        title: "Éxito",
+        description: result.message || "Ítem procesado correctamente",
+        color: "success",
+      });
+      setData((prevData) =>
+        prevData.filter((item) => item.idTicket !== idTicket)
+      );
+    } catch (error) {
+      addToast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error al procesar el ítem",
+        color: "danger",
+      });
+      //console.error("Error procesando el ítem:", error);
+    }
+  }, []);
+
+  // Memoized filtering and sorting
   const filteredData = useMemo(() => {
     let filtered = [...data];
-
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
       filtered = filtered.filter((item) =>
         Object.values(item).some((value) =>
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+          value
+            ?.toString()
+            .toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase())
         )
       );
     }
-
     if (selectedStatus) {
       filtered = filtered.filter(
         (item) => item.estado_ticket === selectedStatus
       );
     }
-
     return filtered;
-  }, [data, searchTerm, selectedStatus]);
+  }, [data, debouncedSearchTerm, selectedStatus]);
 
-  // Sorting data
   const sortedData = useMemo(() => {
     return [...filteredData].sort((a, b) => {
       const first = a[sortDescriptor.column];
@@ -206,7 +242,6 @@ export default function FPRegistradosTable() {
     });
   }, [filteredData, sortDescriptor]);
 
-  // Pagination
   const paginatedData = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
@@ -215,20 +250,10 @@ export default function FPRegistradosTable() {
 
   const totalPages = Math.ceil(sortedData.length / rowsPerPage);
 
-  const handleSortChange = (column: string) => {
-    setSortDescriptor((prev) => ({
-      column,
-      direction:
-        prev.column === column && prev.direction === "ascending"
-          ? "descending"
-          : "ascending",
-    }));
-  };
-
-  const renderCell = React.useCallback(
+  // Memoized renderCell for performance
+  const renderCell = useCallback(
     (item: any, columnKey: string | number) => {
       const cellValue = item[columnKey];
-
       switch (columnKey) {
         case "id":
           return (
@@ -252,16 +277,17 @@ export default function FPRegistradosTable() {
           return (
             <div className="flex items-center gap-2">
               <p className="text-sm text-default-400">{cellValue}</p>
-              <Tooltip content="Ver detalles">
-                <span
-                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
+              <Tooltip content="Ver detalles de la subcategoría">
+                <button
+                  className="text-lg text-default-400 cursor-pointer active:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   onClick={() => {
-                    setCausalModalData({ idCausal: cellValue }); // Pasamos solo el ID
+                    setCausalModalData({ idCausal: cellValue });
                     setIsCausalModalOpen(true);
                   }}
+                  aria-label={`Ver detalles de subcategoría ${cellValue}`}
                 >
                   <EyeIcon />
-                </span>
+                </button>
               </Tooltip>
             </div>
           );
@@ -316,6 +342,14 @@ export default function FPRegistradosTable() {
                   <DeleteIcon />
                 </span>
               </Tooltip>
+              <Tooltip color="danger" content="Rechazar item">
+                <span
+                  className="text-lg text-danger cursor-pointer active:opacity-50"
+                  onClick={() => handleRechazarItem(item.id)}
+                >
+                  <LuBadgeX />
+                </span>
+              </Tooltip>
               <Tooltip color="success" content="Procesar ítem">
                 <span
                   className="text-lg text-success cursor-pointer active:opacity-50"
@@ -330,126 +364,176 @@ export default function FPRegistradosTable() {
           return cellValue;
       }
     },
-    []
+    [handleProcessItem, handleRechazarItem]
   );
 
-  if (isLoading) {
-    return (
-      <Table aria-label="Tabla de puntos registrados - Cargando">
-        <TableHeader columns={columns}>
-          {(column) => (
-            <TableColumn
-              key={column.uid}
-              align={column.uid === "actions" ? "center" : "start"}
-            >
-              {column.name}
-            </TableColumn>
-          )}
-        </TableHeader>
-        <TableBody>
-          {[...Array(5)].map((_, rowIndex) => (
-            <TableRow key={rowIndex}>
-              {columns.map((column) => (
-                <TableCell key={column.uid}>
-                  {column.uid === "actions" ? (
-                    <div className="relative flex items-center gap-2">
-                      <Skeleton className="h-5 w-5 rounded-full" />
-                      <Skeleton className="h-5 w-5 rounded-full" />
-                      <Skeleton className="h-5 w-5 rounded-full" />
-                      <Skeleton className="h-5 w-5 rounded-full" />
-                    </div>
-                  ) : column.uid === "estado_ticket" ? (
-                    <Skeleton className="h-6 w-16 rounded-md" />
-                  ) : (
-                    <Skeleton className="h-4 w-full rounded-md" />
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
-  }
+  // Log para depurar el estado de isLoading
+  console.log("Current isLoading state:", isLoading);
 
   return (
-    <>
-      <div className="flex flex-col gap-4">
-        {/* Search and Filter Controls */}
-        <div className="flex justify-between gap-3 items-center">
+    <div className="flex flex-col gap-4 p-4 rounded-lg">
+      {/* Header with Search and Filters */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 items-center">
+        <div className="w-full sm:w-auto">
           <Input
-            placeholder="Buscar..."
+            placeholder="Buscar en cualquier campo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            startContent={<SearchIcon className="w-4 h-4" />}
-            className="max-w-xs"
+            startContent={<SearchIcon className="w-4 h-4 text-gray-400" />}
+            className="w-full sm:max-w-xs focus:ring-2 focus:ring-primary"
+            aria-label="Buscar tickets"
           />
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto justify-end">
           <Dropdown>
             <DropdownTrigger>
-              <Button variant="bordered">{selectedStatus || "Estado"}</Button>
+              <Button variant="bordered" className="w-full sm:w-auto">
+                {selectedStatus || "Filtrar por Estado"}
+              </Button>
             </DropdownTrigger>
             <DropdownMenu
-              aria-label="Filtro de estado"
-              onAction={(key) => setSelectedStatus(key as string)}
+              aria-label="Filtro por estado de ticket"
+              onAction={(key) => setSelectedStatus((key as string) || null)}
             >
+              <DropdownItem key="">Todos los estados</DropdownItem>
               <>
-                <DropdownItem key="">Todos</DropdownItem>
                 {statusOptions.map((option) => (
                   <DropdownItem key={option.uid}>{option.name}</DropdownItem>
                 ))}
               </>
             </DropdownMenu>
           </Dropdown>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedStatus(null);
+            }}
+            className="w-full sm:w-auto"
+          >
+            Limpiar Filtros
+          </Button>
         </div>
+      </div>
 
-        {/* Table */}
-        <Table aria-label="Tabla de puntos registrados">
+      {/* Table with responsive and hover effects */}
+      <div className="overflow-x-auto">
+        <Table
+          aria-label="Tabla de puntos registrados"
+          className="min-w-full"
+          isStriped
+          removeWrapper
+        >
           <TableHeader columns={columns}>
             {(column) => (
               <TableColumn
                 key={column.uid}
                 align={column.uid === "actions" ? "center" : "start"}
-                onClick={() => column.sortable && handleSortChange(column.uid)}
-                className={column.sortable ? "cursor-pointer" : ""}
+                onClick={() =>
+                  column.sortable &&
+                  setSortDescriptor((prev) => ({
+                    column: column.uid,
+                    direction:
+                      prev.column === column.uid &&
+                      prev.direction === "ascending"
+                        ? "descending"
+                        : "ascending",
+                  }))
+                }
+                className={`${column.sortable ? "cursor-pointer" : ""} text-sm font-medium`}
               >
-                {column.name}
-                {sortDescriptor.column === column.uid && (
-                  <span>
-                    {sortDescriptor.direction === "ascending" ? " ↑" : " ↓"}
-                  </span>
-                )}
+                <div className="flex items-center gap-1">
+                  {column.name}
+                  {sortDescriptor.column === column.uid && (
+                    <span className="text-xs">
+                      {sortDescriptor.direction === "ascending" ? "↑" : "↓"}
+                    </span>
+                  )}
+                </div>
               </TableColumn>
             )}
           </TableHeader>
-          <TableBody
-            items={paginatedData}
-            emptyContent="No se encontraron datos"
-          >
-            {(item) => (
-              <TableRow key={item.id}>
-                {(columnKey) => (
-                  <TableCell>{renderCell(item, columnKey)}</TableCell>
-                )}
+          <TableBody>
+            {isLoading ? (
+              [...Array(5)].map((_, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {columns.map((col) => (
+                    <TableCell key={col.uid} className="py-3">
+                      {col.uid === "actions" ? (
+                        <div className="relative flex items-center gap-2">
+                          <Skeleton className="h-5 w-5 rounded-full bg-gray-200" />
+                          <Skeleton className="h-5 w-5 rounded-full bg-gray-200" />
+                          <Skeleton className="h-5 w-5 rounded-full bg-gray-200" />
+                          <Skeleton className="h-5 w-5 rounded-full bg-gray-200" />
+                        </div>
+                      ) : col.uid === "estado_ticket" ? (
+                        <Skeleton className="h-6 w-16 rounded-md bg-gray-200" />
+                      ) : (
+                        <Skeleton className="h-5 w-3/4 rounded-md bg-gray-200" />
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : paginatedData.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="py-6 text-center text-gray-500"
+                >
+                  <p>No se encontraron datos que coincidan con los filtros.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedStatus(null);
+                    }}
+                  >
+                    Limpiar Filtros
+                  </Button>
+                </TableCell>
               </TableRow>
+            ) : (
+              paginatedData.map((item) => (
+                <TableRow key={item.id} className="transition-colors">
+                  {(columnKey) => (
+                    <TableCell className="py-3">
+                      {renderCell(item, columnKey)}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex justify-center">
+      {/* Pagination with enhanced UX */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-2">
+          <p className="text-sm text-gray-500">
+            Mostrando {paginatedData.length} de {sortedData.length} resultados
+          </p>
           <Pagination
             total={totalPages}
             page={page}
             onChange={setPage}
             showControls
+            className="mx-auto sm:mx-0"
+            variant="light"
           />
         </div>
-      </div>
+      )}
+
+      {/* Modal for Causal Subcategory */}
       <CausalSubcategoryModal
         isOpen={isCausalModalOpen}
         onClose={() => setIsCausalModalOpen(false)}
         data={causalModalData}
       />
-    </>
+    </div>
   );
 }

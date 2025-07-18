@@ -27,7 +27,7 @@ import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
 import CausalSubcategoryModal from "../Modals/modalcausal";
 import { DetailsDropdown } from "../Actions/Dropdown";
-import debounce from "lodash.debounce"; // Add lodash for debouncing search
+import debounce from "lodash.debounce";
 
 // Status color mapping for consistent visual feedback (original unchanged)
 const statusColorMap: Record<
@@ -135,6 +135,7 @@ export default function AumentoVelocidadTable() {
   useEffect(() => {
     const getData = async () => {
       try {
+        console.log("Loading started, isLoading:", true);
         setIsLoading(true);
         const result = await fetchData("get-regfpointsaumentovel");
         if (result.status === "success") {
@@ -153,8 +154,9 @@ export default function AumentoVelocidadTable() {
               : "Error al cargar los datos",
           color: "danger",
         });
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       } finally {
+        console.log("Loading finished, isLoading:", false);
         setIsLoading(false);
       }
     };
@@ -180,7 +182,7 @@ export default function AumentoVelocidadTable() {
             : "Error al procesar el ticket",
         color: "danger",
       });
-      console.error("Error procesando el ticket:", error);
+      //console.error("Error procesando el ticket:", error);
     }
   }, []);
 
@@ -331,6 +333,9 @@ export default function AumentoVelocidadTable() {
     [handleProcessItem]
   );
 
+  // Log para depurar el estado de isLoading
+  console.log("Current isLoading state:", isLoading);
+
   return (
     <div className="flex flex-col gap-4 p-4 rounded-lg">
       {/* Header with Search and Filters */}
@@ -415,48 +420,50 @@ export default function AumentoVelocidadTable() {
               </TableColumn>
             )}
           </TableHeader>
-          <TableBody
-            items={paginatedData}
-            emptyContent={
-              <div className="py-6 text-center text-gray-500">
-                <p>No se encontraron datos que coincidan con los filtros.</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedStatus(null);
-                  }}
+          <TableBody>
+            {isLoading ? (
+              [...Array(5)].map((_, rowIndex) => (
+                <TableRow key={rowIndex} >
+                  {columns.map((col) => (
+                    <TableCell key={col.uid} className="py-3">
+                      <Skeleton className="h-5 w-3/4 rounded-md bg-gray-200" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : paginatedData.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="py-6 text-center text-gray-500"
                 >
-                  Limpiar Filtros
-                </Button>
-              </div>
-            }
-            loadingContent={
-              <div className="py-6 text-center">
-                <Skeleton className="h-6 w-1/4 mx-auto mb-2" />
-                {[...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    {columns.map((col) => (
-                      <TableCell key={col.uid}>
-                        <Skeleton className="h-4 w-full rounded-md" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </div>
-            }
-            isLoading={isLoading}
-          >
-            {(item) => (
-              <TableRow key={item.id} className="transition-colors">
-                {(columnKey) => (
-                  <TableCell className="py-3">
-                    {renderCell(item, columnKey)}
-                  </TableCell>
-                )}
+                  <p>No se encontraron datos que coincidan con los filtros.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedStatus(null);
+                    }}
+                  >
+                    Limpiar Filtros
+                  </Button>
+                </TableCell>
               </TableRow>
+            ) : (
+              paginatedData.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className="transition-colors"
+                >
+                  {(columnKey) => (
+                    <TableCell className="py-3">
+                      {renderCell(item, columnKey)}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>

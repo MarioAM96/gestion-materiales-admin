@@ -38,7 +38,7 @@ export default function CausalSubcategoryCard({
                 : "Error al cargar los detalles",
             color: "danger",
           });
-          console.error("Error fetching details:", error);
+          //console.error("Error fetching details:", error);
         }
       } finally {
         if (isMounted) {

@@ -32,7 +32,7 @@ export default function NewProjectForm() {
       }
       console.log(response);
     } catch (error) {
-      console.error("Error posting data:", error);
+      //console.error("Error posting data:", error);
     }
   };
 

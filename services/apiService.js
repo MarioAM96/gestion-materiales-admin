@@ -1,5 +1,6 @@
-const API_BASE_URL = 'http://10.255.246.88:8000/api';
-//const API_BASE_URL = 'https://api.tvmax.ec/api';
+//const API_BASE_URL = 'http://10.255.246.88:8000/api';
+//const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'https://api.tvmax.ec/api';
 //const API_BASE_URL = 'http://45.173.228.31:81/api';
 
 export const fetchData = async (endpoint) => {
@@ -58,7 +59,7 @@ export const updateData = async (endpoint, data) => {
     }
     return await response.json();
   } catch (error) {
-    console.error('Update error:', error);
+    //console.error('Update error:', error);
   }
 };
 
@@ -72,6 +73,6 @@ export const deleteData = async (endpoint) => {
     }
     return await response.json();
   } catch (error) {
-    console.error('Delete error:', error);
+    //console.error('Delete error:', error);
   }
 };

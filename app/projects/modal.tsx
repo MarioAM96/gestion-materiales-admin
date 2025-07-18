@@ -30,7 +30,7 @@ export default function ModalForm() {
         const response = await fetchData("keys");
         setJsonFiles(response.files);
       } catch (error) {
-        console.error("Error fetching JSON files:", error);
+        //console.error("Error fetching JSON files:", error);
         addToast({
           title: "Error",
           description: "No se pudieron cargar los archivos JSON.",
@@ -54,7 +54,7 @@ export default function ModalForm() {
         color: "success",
       });
     } catch (error) {
-      console.error("Error fetching JSON file content:", error);
+      //console.error("Error fetching JSON file content:", error);
       setSelectedFileContent(null);
       addToast({
         title: "Error",
@@ -107,7 +107,7 @@ export default function ModalForm() {
         });
       }
     } catch (error) {
-      console.error("Error posting data:", error);
+      //console.error("Error posting data:", error);
       addToast({
         title: "Error",
         description: "Ocurrió un error inesperado. Inténtalo de nuevo.",

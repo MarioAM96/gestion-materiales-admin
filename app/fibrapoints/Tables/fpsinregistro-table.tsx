@@ -67,7 +67,7 @@ export default function FPSinRegistroTable() {
               : "Error al cargar los datos",
           color: "danger",
         });
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false); // Finalizar el estado de carga, haya éxito o error
       }

@@ -53,7 +53,7 @@ export default function ProjectsTable() {
         }));
         setData(modifiedData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        //console.error("Error fetching data:", error);
       }
     };
 
