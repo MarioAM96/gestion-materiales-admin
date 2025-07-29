@@ -26,7 +26,8 @@ import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
-import CausalSubcategoryModal from "../Modals/modalcausal";
+import CausalSubcategoryModal from "../Modals/CausalModal";
+import NuevoRegistroModal from "../Modals/NuevoRegistroModal";
 import { DetailsDropdown } from "../Actions/Dropdown";
 import debounce from "lodash.debounce"; // Añadido para debouncing de búsqueda
 
@@ -87,6 +88,7 @@ export default function FPRegistradosTable() {
   });
   const [page, setPage] = useState<number>(1);
   const [isCausalModalOpen, setIsCausalModalOpen] = useState<boolean>(false);
+  const [isNuevoRegistroModalOpen, setIsNuevoRegistroModalOpen] = useState<boolean>(false);
   const [causalModalData, setCausalModalData] = useState<any>(null);
   const rowsPerPage = 10;
 
@@ -164,29 +166,34 @@ export default function FPRegistradosTable() {
   }, []);
 
   // Process item handler with confirmation
-  const handleRechazarItem = useCallback(async (idTicket: string) => {
-    try {
-      const result = await updateData("update-status/" + idTicket, {
-        status: "RECHAZADO",
-      });
-      addToast({
-        title: "Éxito",
-        description: result.message || "Ítem rechazado correctamente",
-        color: "success",
-      });
-      setData((prevData) =>
-        prevData.filter((item) => item.idTicket !== idTicket)
-      );
-    } catch (error) {
-      addToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Error al procesar el ítem",
-        color: "danger",
-      });
-      //console.error("Error procesando el ítem:", error);
-    }
-  }, []);
+  const handleUpdateStatusItem = useCallback(
+    async (idTicket: string, status: string) => {
+      try {
+        const result = await updateData("update-status/" + idTicket, {
+          status: status,
+        });
+        addToast({
+          title: "Éxito",
+          description: result.message || "Ítem rechazado correctamente",
+          color: "success",
+        });
+        setData((prevData) =>
+          prevData.filter((item) => item.idTicket !== idTicket)
+        );
+      } catch (error) {
+        addToast({
+          title: "Error",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Error al procesar el ítem",
+          color: "danger",
+        });
+        //console.error("Error procesando el ítem:", error);
+      }
+    },
+    []
+  );
 
   const handleProcessItem = useCallback(async (idTicket: string) => {
     try {
@@ -345,7 +352,7 @@ export default function FPRegistradosTable() {
               <Tooltip color="danger" content="Rechazar item">
                 <span
                   className="text-lg text-danger cursor-pointer active:opacity-50"
-                  onClick={() => handleRechazarItem(item.id)}
+                  onClick={() => handleUpdateStatusItem(item.id, "RECHAZADO")}
                 >
                   <LuBadgeX />
                 </span>
@@ -364,7 +371,7 @@ export default function FPRegistradosTable() {
           return cellValue;
       }
     },
-    [handleProcessItem, handleRechazarItem]
+    [handleProcessItem, handleUpdateStatusItem]
   );
 
   // Log para depurar el estado de isLoading
@@ -376,7 +383,7 @@ export default function FPRegistradosTable() {
       <div className="flex flex-col sm:flex-row justify-between gap-3 items-center">
         <div className="w-full sm:w-auto">
           <Input
-            placeholder="Buscar en cualquier campo..."
+            placeholder="Buscar en cualquier campo"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             startContent={<SearchIcon className="w-4 h-4 text-gray-400" />}
@@ -413,6 +420,13 @@ export default function FPRegistradosTable() {
             className="w-full sm:w-auto"
           >
             Limpiar Filtros
+          </Button>
+          <Button
+            onClick={() => {
+              setIsNuevoRegistroModalOpen(true);
+            }}
+          >
+            Nuevo Registro
           </Button>
         </div>
       </div>
@@ -533,6 +547,11 @@ export default function FPRegistradosTable() {
         isOpen={isCausalModalOpen}
         onClose={() => setIsCausalModalOpen(false)}
         data={causalModalData}
+      />
+
+      <NuevoRegistroModal
+        isOpen={isNuevoRegistroModalOpen}
+        onClose={() => setIsNuevoRegistroModalOpen(false)}
       />
     </div>
   );

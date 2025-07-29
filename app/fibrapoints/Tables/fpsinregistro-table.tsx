@@ -17,7 +17,7 @@ import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SlArrowRightCircle } from "react-icons/sl";
 import { DetailsDropdown } from "../Actions/Dropdown";
-import CausalSubcategoryModal from "../Modals/modalcausal";
+import CausalSubcategoryModal from "../Modals/CausalModal";
 import { TiWarningOutline } from "react-icons/ti";
 
 export const columns = [

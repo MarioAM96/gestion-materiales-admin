@@ -25,7 +25,7 @@ import { DeleteIcon, EditIcon, EyeIcon } from "@/components/icons";
 import { Skeleton } from "@heroui/react";
 import { SearchIcon } from "lucide-react";
 import Pusher from "pusher-js";
-import CausalSubcategoryModal from "../Modals/modalcausal";
+import CausalSubcategoryModal from "../Modals/CausalModal";
 import { DetailsDropdown } from "../Actions/Dropdown";
 import debounce from "lodash.debounce";
 
